@@ -22,8 +22,13 @@ export default function PropertyPageClient() {
     const [error, setError] = useState<string | null>(null);
     const [properties, setProperties] = useState<Property[]>([]);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
     const favoritesCount = useMemo(() => properties.filter((p) => p.isFavorite).length, [properties]);
+    const visibleProperties = useMemo(
+        () => (showFavoritesOnly ? properties.filter((p) => p.isFavorite) : properties),
+        [properties, showFavoritesOnly]
+    );
 
     useEffect(() => {
         let cancelled = false;
@@ -103,14 +108,25 @@ export default function PropertyPageClient() {
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => void onLogout()}
-                        disabled={isLoggingOut}
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:opacity-60"
-                    >
-                        {isLoggingOut ? 'Logging out…' : 'Logout'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowFavoritesOnly((v) => !v)}
+                            className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
+                            aria-pressed={showFavoritesOnly}
+                        >
+                            {showFavoritesOnly ? 'Show all' : 'Show favorites'}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => void onLogout()}
+                            disabled={isLoggingOut}
+                            className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:opacity-60"
+                        >
+                            {isLoggingOut ? 'Logging out…' : 'Logout'}
+                        </button>
+                    </div>
                 </div>
 
                 {error ? (
@@ -122,37 +138,43 @@ export default function PropertyPageClient() {
                 {isLoading ? (
                     <p className="text-sm text-gray-600">Loading…</p>
                 ) : (
-                    <ul className="space-y-3">
-                        {properties.map((p) => (
-                            <li key={p.id} className="rounded-lg border border-gray-200 p-4 shadow-sm">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex items-start gap-4">
-                                        <div className="relative h-14 w-14 overflow-hidden rounded-md border border-gray-200 bg-white">
-                                            <Image src={p.imageUrl} alt={p.title} fill className="object-contain p-2" />
+                    visibleProperties.length === 0 ? (
+                        <p className="text-sm text-gray-600">
+                            {showFavoritesOnly ? 'No favorites yet.' : 'No properties found.'}
+                        </p>
+                    ) : (
+                        <ul className="space-y-3">
+                            {visibleProperties.map((p) => (
+                                <li key={p.id} className="rounded-lg border border-gray-200 p-4 shadow-sm">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex items-start gap-4">
+                                            <div className="relative h-14 w-14 overflow-hidden rounded-md border border-gray-200 bg-white">
+                                                <Image src={p.imageUrl} alt={p.title} fill className="object-contain p-2" />
+                                            </div>
+
+                                            <div>
+                                                <h2 className="text-base font-semibold text-gray-900">{p.title}</h2>
+                                                <p className="mt-1 text-sm text-gray-600">{p.location}</p>
+                                                <p className="mt-1 text-sm text-gray-600">Type: {p.type}</p>
+                                                <p className="mt-1 text-sm text-gray-600">
+                                                    {p.priceThb ? `฿${p.priceThb.toLocaleString()}` : '—'}
+                                                </p>
+                                            </div>
                                         </div>
 
-                                        <div>
-                                        <h2 className="text-base font-semibold text-gray-900">{p.title}</h2>
-                                        <p className="mt-1 text-sm text-gray-600">{p.location}</p>
-                                        <p className="mt-1 text-sm text-gray-600">Type: {p.type}</p>
-                                        <p className="mt-1 text-sm text-gray-600">
-                                            {p.priceThb ? `฿${p.priceThb.toLocaleString()}` : '—'}
-                                        </p>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => void toggleFavorite(p.id, !p.isFavorite)}
+                                            className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
+                                            aria-pressed={p.isFavorite}
+                                        >
+                                            {p.isFavorite ? 'Unfavorite' : 'Favorite'}
+                                        </button>
                                     </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => void toggleFavorite(p.id, !p.isFavorite)}
-                                        className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
-                                        aria-pressed={p.isFavorite}
-                                    >
-                                        {p.isFavorite ? 'Unfavorite' : 'Favorite'}
-                                    </button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                                </li>
+                            ))}
+                        </ul>
+                    )
                 )}
             </div>
         </main>
