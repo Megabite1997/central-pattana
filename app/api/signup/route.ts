@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
+import { setSessionCookie } from "@/lib/session";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -48,7 +49,12 @@ export async function POST(request: Request) {
     `;
 
     const id = Array.isArray(rows) && rows.length > 0 ? (rows[0] as { id?: string | number }).id : null;
-    return NextResponse.json({ ok: true, id }, { status: 201 });
+
+    const response = NextResponse.json({ ok: true, id, email }, { status: 201 });
+    if (id) {
+      setSessionCookie(response.cookies, { userId: id, email, remember: true });
+    }
+    return response;
   } catch (error) {
     if (isUniqueViolation(error)) {
       return NextResponse.json({ message: "Email already in use." }, { status: 409 });
