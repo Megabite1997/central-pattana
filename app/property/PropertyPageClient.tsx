@@ -33,10 +33,15 @@ export default function PropertyPageClient() {
             setIsLoading(true);
             try {
                 const res = await fetch('/api/properties', { cache: 'no-store' });
-                if (res.status === 401) {
-                    router.replace('/login?callbackUrl=%2Fproperty');
+
+                if (res.status === 404) {
+                    if (!cancelled) {
+                        setProperties([]);
+                        setError('404 not found property');
+                    }
                     return;
                 }
+
                 if (!res.ok) {
                     const data = (await res.json().catch(() => null)) as { message?: string } | null;
                     throw new Error(data?.message ?? 'Unable to load properties.');
@@ -67,11 +72,7 @@ export default function PropertyPageClient() {
                 body: JSON.stringify({ propertyId, favorite: nextFavorite }),
             });
 
-            if (res.status === 401) {
-                router.replace('/login?callbackUrl=%2Fproperty');
-                return;
-            }
-
+       
             if (!res.ok) {
                 throw new Error('Unable to update favorite.');
             }

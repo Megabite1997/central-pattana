@@ -24,7 +24,6 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export default function SignupPageClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get('callbackUrl') ?? '/';
 
     const [serverError, setServerError] = useState<string | null>(null);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -55,7 +54,6 @@ export default function SignupPageClient() {
                 return;
             }
 
-            router.replace(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
             router.refresh();
         } catch {
             setServerError('Unable to create account. Please try again.');

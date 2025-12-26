@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -18,8 +18,6 @@ type LoginFormValues = z.input<typeof loginSchema>;
 
 export default function LoginPageClient() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get('callbackUrl') ?? '/property';
 
     const [serverError, setServerError] = useState<string | null>(null);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -49,8 +47,7 @@ export default function LoginPageClient() {
                 return;
             }
 
-            router.replace(callbackUrl);
-            router.refresh();
+            router.push('/property');
         } catch {
             setServerError('Unable to sign in. Please try again.');
         }
