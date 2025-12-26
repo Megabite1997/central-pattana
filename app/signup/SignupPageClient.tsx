@@ -141,7 +141,7 @@ export default function SignupPageClient() {
                                 autoComplete="new-password"
                                 {...register('password')}
                                 className="w-full rounded-md border border-gray-300 px-3 py-2 pr-16 text-sm outline-none focus:border-gray-900"
-                                placeholder="••••••••"
+                                placeholder="password"
                                 aria-invalid={errors.password ? 'true' : 'false'}
                             />
                             <button
@@ -169,7 +169,7 @@ export default function SignupPageClient() {
                                 autoComplete="new-password"
                                 {...register('confirmPassword')}
                                 className="w-full rounded-md border border-gray-300 px-3 py-2 pr-16 text-sm outline-none focus:border-gray-900"
-                                placeholder="••••••••"
+                                placeholder="password"
                                 aria-invalid={errors.confirmPassword ? 'true' : 'false'}
                             />
                             <button
