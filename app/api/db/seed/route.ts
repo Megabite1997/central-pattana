@@ -45,8 +45,60 @@ export async function GET(request: Request) {
 
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;`;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS properties (
+      id BIGSERIAL PRIMARY KEY,
+      slug TEXT NOT NULL UNIQUE,
+      title TEXT NOT NULL,
+      location TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'retail',
+      image_url TEXT,
+      price_thb INT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `;
+
+  await sql`ALTER TABLE properties ADD COLUMN IF NOT EXISTS type TEXT;`;
+  await sql`UPDATE properties SET type = 'retail' WHERE type IS NULL;`;
+  await sql`ALTER TABLE properties ALTER COLUMN type SET DEFAULT 'retail';`;
+  await sql`ALTER TABLE properties ALTER COLUMN type SET NOT NULL;`;
+
+  await sql`ALTER TABLE properties ADD COLUMN IF NOT EXISTS image_url TEXT;`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS user_favorites (
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      property_id BIGINT NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, property_id)
+    );
+  `;
+
   if (reset) {
+    await sql`DELETE FROM user_favorites;`;
+    await sql`DELETE FROM properties;`;
     await sql`DELETE FROM users;`;
+  }
+
+  const defaultProperties = [
+    { slug: "cpn-rama-9", title: "Central Rama 9", location: "Bangkok", type: "retail", image_url: "/cpn-45-logo.svg", price_thb: 3200000 },
+    { slug: "cpn-world", title: "CentralWorld", location: "Bangkok", type: "retail", image_url: "/cpn-45-logo.svg", price_thb: 5100000 },
+    { slug: "cpn-ladprao", title: "Central Ladprao", location: "Bangkok", type: "retail", image_url: "/cpn-45-logo.svg", price_thb: 2800000 },
+    { slug: "cpn-westgate", title: "Central WestGate", location: "Nonthaburi", type: "retail", image_url: "/cpn-45-logo.svg", price_thb: 2600000 },
+    { slug: "cpn-festival-chiangmai", title: "Central Festival Chiangmai", location: "Chiang Mai", type: "retail", image_url: "/cpn-45-logo.svg", price_thb: 2400000 },
+    { slug: "cpn-phuket", title: "Central Phuket", location: "Phuket", type: "retail", image_url: "/cpn-45-logo.svg", price_thb: 3900000 },
+
+    { slug: "cpn-office-tower", title: "Central Pattana Office Tower", location: "Bangkok", type: "office", image_url: "/cpn-45-logo.svg", price_thb: 7500000 },
+    { slug: "cpn-hotel", title: "Central Pattana Hotel", location: "Bangkok", type: "hotel", image_url: "/cpn-45-logo.svg", price_thb: 9200000 },
+    { slug: "cpn-residential", title: "Central Pattana Residence", location: "Bangkok", type: "residential", image_url: "/cpn-45-logo.svg", price_thb: 6800000 },
+  ];
+
+  for (const p of defaultProperties) {
+    await sql`
+      INSERT INTO properties (slug, title, location, type, image_url, price_thb)
+      VALUES (${p.slug}, ${p.title}, ${p.location}, ${p.type}, ${p.image_url}, ${p.price_thb})
+      ON CONFLICT (slug) DO NOTHING;
+    `;
   }
 
   const firstNames = [
