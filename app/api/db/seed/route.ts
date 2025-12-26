@@ -77,9 +77,7 @@ export async function GET(request: Request) {
   `;
 
   if (reset) {
-    await sql`DELETE FROM user_favorites;`;
-    await sql`DELETE FROM properties;`;
-    await sql`DELETE FROM users;`;
+    await sql`TRUNCATE TABLE user_favorites, properties, users RESTART IDENTITY CASCADE;`;
   }
 
   const defaultProperties = [
@@ -139,7 +137,7 @@ export async function GET(request: Request) {
   for (let i = 0; i < rowsToInsert; i++) {
     const first = firstNames[i % firstNames.length];
     const last = lastNames[(i + 3) % lastNames.length];
-    const email = `${first.toLowerCase()}.${last.toLowerCase()}.${Date.now()}_${i}@example.com`;
+    const email = `${first.toLowerCase()}.${last.toLowerCase()}@example.com`;
     const name = `${first} ${last}`;
     const passwordHash = await hashPassword(plaintextPassword);
 
