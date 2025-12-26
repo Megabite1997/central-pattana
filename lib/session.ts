@@ -1,4 +1,6 @@
-import crypto from "node:crypto";
+import jwt from "jsonwebtoken";
+
+const SESSION_COOKIE_NAME = "cp_session";
 
 export type SessionPayload = {
   sub: string;
@@ -7,40 +9,23 @@ export type SessionPayload = {
 };
 
 export function createSessionToken(payload: SessionPayload, secret: string) {
-  const payloadJson = JSON.stringify(payload);
-  const payloadB64 = Buffer.from(payloadJson).toString("base64url");
-  const signature = crypto
-    .createHmac("sha256", secret)
-    .update(payloadB64)
-    .digest("base64url");
-  return `${payloadB64}.${signature}`;
-}
-
-function timingSafeEqualString(a: string, b: string) {
-  const aBuf = Buffer.from(a);
-  const bBuf = Buffer.from(b);
-  if (aBuf.length !== bBuf.length) return false;
-  return crypto.timingSafeEqual(aBuf, bBuf);
+  return jwt.sign(payload, secret, {
+    algorithm: "HS256",
+    noTimestamp: true,
+  });
 }
 
 export function verifySessionToken(token: string, secret: string): SessionPayload | null {
-  const [payloadB64, signature] = token.split(".");
-  if (!payloadB64 || !signature) return null;
-
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(payloadB64)
-    .digest("base64url");
-
-  if (!timingSafeEqualString(signature, expectedSignature)) return null;
-
   try {
-    const payloadJson = Buffer.from(payloadB64, "base64url").toString("utf8");
-    const parsed = JSON.parse(payloadJson) as unknown;
-    if (!parsed || typeof parsed !== "object") return null;
-    const sub = (parsed as { sub?: unknown }).sub;
-    const email = (parsed as { email?: unknown }).email;
-    const iat = (parsed as { iat?: unknown }).iat;
+    const decoded = jwt.verify(token, secret, {
+      algorithms: ["HS256"],
+    });
+
+    if (!decoded || typeof decoded !== "object") return null;
+
+    const sub = (decoded as { sub?: unknown }).sub;
+    const email = (decoded as { email?: unknown }).email;
+    const iat = (decoded as { iat?: unknown }).iat;
 
     if (typeof sub !== "string" || sub.length === 0) return null;
 
