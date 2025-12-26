@@ -3,14 +3,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const signupSchema = z
     .object({
-        email: z.string().trim().email('Please enter a valid email address.'),
+        email: z.email('Please enter a valid email address.'),
         password: z.string().min(8, 'Password must be at least 8 characters.'),
         confirmPassword: z.string().min(1, 'Please confirm your password.'),
     })
@@ -23,11 +23,18 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupPageClient() {
     const router = useRouter();
-    const searchParams = useSearchParams();
 
     const [serverError, setServerError] = useState<string | null>(null);
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+
+    const successCtaRef = useRef<HTMLButtonElement | null>(null);
+
+    useEffect(() => {
+        if (!isSuccessModalOpen) return;
+        successCtaRef.current?.focus();
+    }, [isSuccessModalOpen]);
 
     const {
         register,
@@ -40,6 +47,7 @@ export default function SignupPageClient() {
 
     const onSubmit = handleSubmit(async (values) => {
         setServerError(null);
+        setIsSuccessModalOpen(false);
 
         try {
             const res = await fetch('/api/signup', {
@@ -54,7 +62,7 @@ export default function SignupPageClient() {
                 return;
             }
 
-            router.refresh();
+            setIsSuccessModalOpen(true);
         } catch {
             setServerError('Unable to create account. Please try again.');
         }
@@ -62,6 +70,31 @@ export default function SignupPageClient() {
 
     return (
         <main className="min-h-screen flex flex-col gap-4 items-center justify-center bg-white px-4">
+            {isSuccessModalOpen ? (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+                    role="dialog"
+             
+                >
+                    <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-sm">
+                        <h2 className="text-lg font-semibold text-gray-900">
+                            Account created
+                        </h2>
+                        <p className="mt-2 text-sm text-gray-600">Your account was created successfully.</p>
+                        <div className="mt-6">
+                            <button
+                                ref={successCtaRef}
+                                type="button"
+                                onClick={() => router.push('/property')}
+                                className="w-full rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white cursor-pointer"
+                            >
+                                Go to properties
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+
             <Image src="/cpn-45-logo.svg" alt="Central Pattana Image" width={400} height={300} />
             <div className="w-full max-w-md rounded-lg border border-gray-200 p-6 shadow-sm">
                 <div className="mb-6">
