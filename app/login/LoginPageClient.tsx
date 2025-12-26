@@ -19,7 +19,7 @@ type LoginFormValues = z.input<typeof loginSchema>;
 export default function LoginPageClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get('callbackUrl') ?? '/';
+    const callbackUrl = searchParams.get('callbackUrl') ?? '/property';
 
     const [serverError, setServerError] = useState<string | null>(null);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
