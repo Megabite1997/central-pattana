@@ -33,6 +33,8 @@ export async function GET(request: Request) {
   const reset = url.searchParams.get("reset") === "1";
   const plaintextPassword = process.env.SEED_USER_PASSWORD ?? "Password123!";
 
+  console.log('plaintextPassword ------> ', plaintextPassword)
+
   await sql`
     CREATE TABLE IF NOT EXISTS users (
       id BIGSERIAL PRIMARY KEY,
