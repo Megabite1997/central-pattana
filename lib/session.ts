@@ -39,6 +39,54 @@ export function verifySessionToken(token: string, secret: string): SessionPayloa
   }
 }
 
+type CookieSetter = {
+  set: (options: {
+    name: string;
+    value: string;
+    httpOnly: boolean;
+    sameSite: "lax" | "strict" | "none";
+    secure: boolean;
+    path: string;
+    maxAge?: number;
+  }) => void;
+};
+
+export function setSessionCookie(
+  cookies: CookieSetter,
+  args: { userId: string | number; email?: string; remember?: boolean }
+) {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) return;
+
+  const remember = args.remember ?? true;
+  const token = createSessionToken(
+    { sub: String(args.userId), ...(args.email ? { email: args.email } : null), iat: Date.now() },
+    secret
+  );
+
+  cookies.set({
+    name: SESSION_COOKIE_NAME,
+    value: token,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    ...(remember ? { maxAge: 60 * 60 * 24 * 30 } : null),
+  });
+}
+
+export function clearSessionCookie(cookies: CookieSetter) {
+  cookies.set({
+    name: SESSION_COOKIE_NAME,
+    value: "",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+}
+
 export function getCookieValue(cookieHeader: string | null, name: string) {
   if (!cookieHeader) return null;
   const parts = cookieHeader.split(";");
@@ -54,7 +102,7 @@ export function getSessionUserIdFromRequest(request: Request) {
   if (!secret) return null;
 
   const cookieHeader = request.headers.get("cookie");
-  const token = getCookieValue(cookieHeader, "cp_session");
+  const token = getCookieValue(cookieHeader, SESSION_COOKIE_NAME);
   if (!token) return null;
 
   const payload = verifySessionToken(token, secret);

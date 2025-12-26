@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
-import { createSessionToken } from "@/lib/session";
+import { setSessionCookie } from "@/lib/session";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -54,20 +54,7 @@ export async function POST(request: Request) {
 
   const response = NextResponse.json({ ok: true }, { status: 200 });
 
-  const authSecret = process.env.AUTH_SECRET;
-  if (authSecret) {
-    const token = createSessionToken({ sub: String(user.id), email, iat: Date.now() }, authSecret);
-
-    response.cookies.set({
-      name: "cp_session",
-      value: token,
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      ...(remember ? { maxAge: 60 * 60 * 24 * 30 } : null),
-    });
-  }
+  setSessionCookie(response.cookies, { userId: user.id, email, remember });
 
   return response;
 }
